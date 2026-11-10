@@ -1,0 +1,156 @@
+
+# PRACTICA 1 – Configuración del GRUB y recuperación de contraseña Root
+
+# Configurar el tiempo de espera del menú GRUB
+# Edita el archivo de configuración de GRUB:
+sudo nano /etc/default/grub
+
+# Busca la línea:
+GRUB_TIMEOUT=5
+#y cámbiala a:
+GRUB_TIMEOUT=20
+# Guarda los cambios (Ctrl+O, Enter, Ctrl+X)
+# Aplica la configuración:
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+# Verifica:
+grep GRUB_TIMEOUT /etc/default/grub
+
+# Método de recuperación si olvidas la contraseña del usuario root
+
+# En el menú GRUB, selecciona tu sistema y presiona e para editar.
+# Busca la línea que comienza con linux y agrega al final:
+rd.break
+#Presiona Ctrl + X o F10 para iniciar.
+
+# Monta el sistema en modo lectura/escritura:
+mount -o remount,rw /sysroot
+
+# Entra en el entorno root:
+chroot /sysroot
+
+#Cambia la contraseña:
+passwd root
+
+# Actualiza el contexto de SELinux:
+touch /.autorelabel
+
+# Sal y reinicia:
+exit
+reboot
+
+# Al iniciar de nuevo, podrás acceder con la nueva contraseña
+
+
+PRÁCTICA2: SCRIPTS EN ROCKY LINUX
+================================
+
+PARTE 1: BACKUP CON TAR
+-----------------------
+1. Crear el script:
+   nano backup.sh
+
+2. Pegar lo siguiente:
+
+#!/bin/bash
+fecha=$(date +"%d-%m-%Y:%H:%M")
+tar -czvf "$HOME/backup_$fecha.tar.gz" -C /home "$USER"
+echo "Backup creado correctamente"
+
+3. Guardar: Ctrl+O, Enter, Ctrl+X.
+
+4. Dar permisos y ejecutar:
+   chmod +x backup.sh
+   ./backup.sh
+
+5. Comprobar:
+   ls -lh ~/backup_*.tar.gz
+
+NOTA: El nombre tendrá el formato backup_dd-mm-yyyy:hh:mm.tar.gz.
+
+
+PARTE 2: GUARDAR IFCONFIG EN UN ARCHIVO DEL ESCRITORIO
+------------------------------------------------------
+1. Instalar ifconfig (si hace falta):
+   sudo dnf install net-tools -y
+
+2. Crear el script:
+   nano red.sh
+
+3. Pegar lo siguiente:
+
+#!/bin/bash
+read -p "Nombre del archivo: " nombre
+mkdir -p "$HOME/Escritorio"
+ifconfig > "$HOME/Escritorio/$nombre.txt"
+echo "Archivo creado en el Escritorio"
+
+4. Guardar: Ctrl+O, Enter, Ctrl+X.
+
+5. Dar permisos y ejecutar:
+   chmod +x red.sh
+   ./red.sh
+
+6. Cuando pregunte el nombre, escribir por ejemplo:
+   red_servidor
+
+7. Comprobar:
+   cat ~/Escritorio/red_servidor.txt
+
+NOTA: Si tu escritorio está en inglés y la carpeta se llama Desktop,
+reemplaza Escritorio por Desktop en el script y en la comprobación.
+
+---------------------------------------------------
+# PRACTICA 3 - VELISSA | m20251408 |RL
+---------------------------------------------------
+Pega esto completo en la terminal de tu VM:
+bash# 1. Ver IP actual (verificar que sea 192.168.17.150)
+ip addr show
+
+# 2. Actualizar el sistema
+sudo dnf update -y
+
+# 3. Instalar openssh-server (por si no está)
+sudo dnf install openssh-server -y
+
+# 4. Habilitar e iniciar el servicio SSH
+sudo systemctl enable sshd
+sudo systemctl start sshd
+
+# 5. Verificar que SSH está corriendo
+sudo systemctl status sshd
+
+# 6. Abrir el puerto 22 en el firewall
+firewall-cmd --permanent --add-service=ssh
+firewall-cmd --reload
+
+# 7. Verificar que el firewall tiene SSH permitido
+sudo firewall-cmd --list-all
+
+# 8. Crear carpeta .ssh y el archivo authorized_keys (para la llave publica despues)
+mkdir -p /home/VELISSA/.ssh
+touch /home/VELISSA/.ssh/authorized_keys
+chmod 700 /home/VELISSA/.ssh
+chmod 600 /home/VELISSA/.ssh/authorized_keys
+
+🪟 PARTE 2 — En Windows 11 (PowerShell como Administrador)
+Abre PowerShell como Administrador y pega esto:
+powershell# 1. Verificar que puedes hacer ping a la VM
+ping 192.168.17.150
+
+# 2. Probar conexion SSH con usuario y contraseña (primera prueba)
+ssh VELISSA@192.168.17.150
+# Te pedira la contrasena de VELISSA, escríbela y verifica que entras
+# Cuando entres escribe: exit
+
+# 3. Generar el par de llaves SSH (publica y privada)
+# Cuando pregunte donde guardar, presiona ENTER para usar la ruta por defecto
+# Cuando pregunte passphrase, presiona ENTER dos veces (dejarlo en blanco)
+ssh-keygen
+scp C:\Users\Dell/.ssh/id_ed25519.pub velissa@192.168.10.150:/home/velissa/
+
+En el
+ls
+cat ~/id_ed25519.pub>> ~/.ssh/authorized_keys
+chmod 700 /home/velissa/.ssh
+chmod 600 /home/velissa/.ssh/authorized_keys
+chown -R velissa:velissa /home/velissa/.ssh
